@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <title>文本隐水印</title>
+    <link rel="stylesheet" type="text/css" href="diffview.css"/>
+    <style type="text/css">
+        body {
+            font-size: 12px;
+            font-family: Sans-Serif;
+        }
+
+        h2,h3 {
+            margin: 0.5em 0 0.1em;
+            text-align: center;
+        }
+
+        .top {
+            text-align: center;
+        }
+
+        .textInput {
+            display: block;
+        }
+
+        .textOutput {
+            display: block;
+        }
+
+
+        textarea {
+            width: 100%;
+            height: 300px;
+        }
+
+        label:hover {
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+
+        .viewType {
+            font-size: 16px;
+            clear: both;
+            text-align: center;
+            padding: 1em;
+        }
+
+    </style>
+
+    <script type="text/javascript">
+
+        function main() {
+            var wm = document.getElementById("wm").value;
+            var text = document.getElementById("baseText").value;
+
+            var wm_bin = str2bin(wm);
+            wm_bin += " ";
+            console.log(wm_bin);
+            var text_embed = embed(text, wm_bin);
+
+            document.getElementById("newText").innerHTML = text_embed;
+
+
+        }
+
+
+        function str2bin(str) {
+            var result = [];
+            var list = str.split("");
+            for (var i = 0; i < list.length; i++) {
+                if (i != 0) {
+                    result.push(" ");
+                }
+                var item = list[i];
+                var binaryStr = item.charCodeAt().toString(2);
+                result.push(binaryStr);
+            }
+            return result.join("");
+        }
+
+        function bin2str(str) {
+            var result = [];
+            var list = str.split(" ");
+            for (var i = 0; i < list.length; i++) {
+                var item = list[i];
+                var asciiCode = parseInt(item, 2);
+                var charValue = String.fromCharCode(asciiCode);
+                result.push(charValue);
+            }
+            return result.join("");
+        }
+
+        function embed(text, wm_bin) {
+            var len_bin_wm = wm_bin.length;
+            var len_text = text.length;
+            if (len_bin_wm > len_text) {
+                return "密文需要明文长度为" + len_bin_wm + "，不符合要求。";
+            }
+
+
+            var text_embed = "";
+            for (var idx = 0; idx < len_text; idx++) {
+                text_embed += text[idx];
+                if (wm_bin[idx] === "1") {
+                    text_embed += String.fromCharCode(127);
+                } else if (wm_bin[idx] === " ") {
+                    text_embed += String.fromCharCode(127);
+                    text_embed += String.fromCharCode(127);
+                }
+            }
+            return text_embed;
+        }
+
+        function extract(text_embed) {
+            var bin_wm_extract = "";
+            var idx = 0;
+            var previous_is_char = false;
+            while (idx < text_embed.length) {
+                if (previous_is_char) {
+                    if (text_embed[idx] === String.fromCharCode(127)) {
+                        if (text_embed[idx + 1] === String.fromCharCode(127)) {
+                            bin_wm_extract += " ";
+                            previous_is_char = false;
+
+                            idx++;
+                        } else {
+                            bin_wm_extract += "1";
+                            previous_is_char = false;
+
+                        }
+                    } else {
+                        bin_wm_extract += "0";
+                        previous_is_char = true;
+
+                    }
+                } else {
+                    previous_is_char = true;
+                }
+
+                idx++;
+
+            }
+
+            return bin_wm_extract
+        }
+
+
+        function main2() {
+            text_embed = document.getElementById("text_embed2").value;
+            document.getElementById("wm_extract").innerHTML = bin2str(extract(text_embed));
+        }
+
+
+    </script>
+</head>
+
+
+<body>
+<h1 class="top">文本隐水印</h1>
+
+<hr>
+
+<h2 class="top">1. 把隐水印嵌入到明文</h2>
+<table width="100%">
+    <tr>
+        <td width="48%">
+            <div class="textInput">
+                <strong>需要隐藏的密文：</strong>
+                <input id="wm" type="text" name="" value="">
+
+                <h3>作为掩护的明文</h3>
+                <textarea id="baseText"></textarea>
+            </div>
+        </td>
+
+        <td width="4%" align="middle">
+            <button type="button" onclick="main();">embed=&gt;</button>
+        </td>
+
+        <td width="48%">
+            <div class="textOutput">
+                <h3>嵌入密文后的明文</h3>
+                <textarea id="newText" readonly="readonly"></textarea>
+            </div>
+        </td>
+
+    </tr>
+</table>
+
+
+
+<hr>
+<h2 class="top">2. 把隐水印嵌入到明文</h2>
+
+<table>
+    <tr>
+        <td>
+            <h3>嵌入密文后的明文</h3>
+            <textarea id="text_embed2"></textarea>
+        </td>
+
+        <td width="4%" align="middle">
+            <button type="button" onclick="main2();">extract=&gt;</button>
+        </td>
+
+        <td>
+            <h3>解出的密文</h3>
+            <textarea id="wm_extract" readonly="readonly"></textarea>
+        </td>
+
+    </tr>
+
+</table>
+
+<hr>
+
+
+</body>
+</html>
